@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.newstrend.dao.NewsSummaryDao">
+
+    <!-- 뉴스 저장 -->
+    <insert id="insertNewsSummary" 
+      parameterType="NewsSummary" 
+      useGeneratedKeys="true" 
+      keyProperty="summaryId">
+        insert into news_summary (
+            member_id,
+            source_name,
+            source_url,
+            title,
+            published_at,
+            summary_text,
+            detail_summary,
+            analysis_json,
+            keywords_json
+        )
+        VALUES (
+            #{memberId},
+            #{sourceName},
+            #{sourceUrl},
+            #{title},
+            #{publishedAt},
+            #{summaryText},
+            #{detailSummary},
+            CAST(#{analysisJson} AS JSONB),
+            CAST(#{keywordsJson} AS JSONB)
+        )
+    </insert>
+
+    <!-- 단일 뉴스 조회 -->
+    <select id="selectNewsSummaryById" 
+      resultType="NewsSummary">
+        select
+          summary_id,
+          member_id,
+          source_name,
+          source_url,
+          title,
+          published_at,
+          summary_text,
+          detail_summary,
+          analysis_json,
+          keywords_json,
+          created_at
+        from news_summary
+        where summary_id = #{summaryId}
+    </select>
+
+    <!-- URL 중복 체크 -->
+    <select id="selectNewsSummaryBySourceUrl" 
+      resultType="NewsSummary">
+        select
+          summary_id,
+          member_id,
+          source_name,
+          source_url,
+          title,
+          published_at,
+          summary_text,
+          detail_summary,
+          analysis_json,
+          keywords_json,
+          created_at
+        from news_summary
+        where source_url = #{sourceUrl}
+        LIMIT 1
+    </select>
+
+    <!-- 특정 멤버의 뉴스 조회 -->
+    <select id="selectLatestNewsByMemberId" 
+      resultType="NewsSummary">
+        select
+          summary_id,
+          member_id,
+          source_name,
+          source_url,
+          title,
+          published_at,
+          summary_text,
+          detail_summary,
+          analysis_json,
+          keywords_json,
+          created_at
+        from news_summary
+        where member_id = #{memberId}
+        order by created_at DESC
+        limit #{limit}
+    </select>
+
+    <!-- 특정 멤버의 특정 시간 뉴스 조회 -->
+    <select id="selectNewsByMemberAndDate" resultType="NewsSummary">
+      select
+        summary_id,
+        member_id,
+        title,
+        source_name,
+        source_url,
+        published_at,
+        summary_text,
+        detail_summary,
+        analysis_json,
+        keywords_json,
+        created_at
+        
+      from
+        news_summary
+      where
+       member_id = #{memberId}
+      AND 
+        DATE(created_at) = #{date}
+      ORDER BY created_at DESC
+      LIMIT #{limit}
+
+    </select>
+
+    <select id="searchNewsByKeywordsAndDate" resultType="NewsSummary">
+      select 
+          summary_id, 
+          member_id, 
+          source_name, 
+          source_url, 
+          title, 
+          published_at, 
+          summary_text, 
+          detail_summary, 
+          analysis_json, 
+          keywords_json, 
+          created_at
+      from news_summary
+      where 1=1
+        <if test="keywords != null and keywords.size() > 0">
+            AND (
+                <foreach collection="keywords" item="keyword" separator=" OR ">
+                    title ILIKE CONCAT('%', #{keyword}, '%')
+                    OR summary_text ILIKE CONCAT('%', #{keyword}, '%')
+                    OR detail_summary ILIKE CONCAT('%', #{keyword}, '%')
+                    OR CAST(keywords_json AS TEXT) ILIKE CONCAT('%', #{keyword}, '%')
+                </foreach>
+            )
+        </if>
+       <!-- 날짜 필터 -->
+            <if test="period == 'today'">
+                AND DATE(published_at) = CURRENT_DATE
+            </if>
+            <if test="period == 'week'">
+                AND published_at >= CURRENT_DATE - INTERVAL '7 days'
+            </if>
+            <if test="period == 'month'">
+                AND published_at >= CURRENT_DATE - INTERVAL '1 month'
+            </if>
+
+      order by published_at DESC, created_at DESC
+      limit #{limit}
+    </select>
+
+    <!-- 기본 피드용: 직군 기반 여러 키워드 + memberId 필터링 -->
+    <select id="findByJobGroupKeywords" resultType="NewsSummary">
+        select
+            summary_id,
+            member_id,
+            source_name,
+            source_url,
+            title,
+            published_at,
+            summary_text,
+            detail_summary,
+            analysis_json,
+            keywords_json,
+            created_at
+        from news_summary
+        where member_id = #{memberId}
+       
+        <!-- ✅ 무한 스크롤 아닐 때만 날짜 필터 적용 -->
+      <if test="lastPublishedAt == null and lastSummaryId == null">
+          <if test="period == 'today'">
+              AND DATE(published_at) = CURRENT_DATE
+          </if>
+          <if test="period == 'week'">
+              AND published_at >= CURRENT_DATE - INTERVAL '7 days'
+          </if>
+          <if test="period == 'month'">
+              AND published_at >= CURRENT_DATE - INTERVAL '1 month'
+          </if>
+      </if>
+
+      <!-- ✅ 무한 스크롤 커서 -->
+      <if test="lastPublishedAt != null and lastSummaryId != null">
+        AND (
+            published_at &lt; #{lastPublishedAt}
+            OR (published_at = #{lastPublishedAt} AND summary_id &lt; #{lastSummaryId})
+        )
+      </if>
+
+      AND (
+          <foreach collection="keywords" item="keyword" separator=" OR ">
+             ( title ILIKE CONCAT('%', #{keyword}, '%')
+              OR detail_summary ILIKE CONCAT('%', #{keyword}, '%')
+              OR CAST(keywords_json AS TEXT) ILIKE CONCAT('%', #{keyword}, '%')
+              )
+          </foreach>
+      )
+      order by published_at DESC, created_at DESC
+      limit #{limit}
+    </select>
+
+    <!-- 뉴스 삭제 -->
+    <delete id="deleteAllNews">
+        delete from news_summary
+        where member_id= #{memberId}
+    </delete>
+
+    <!-- 오늘 수집된 뉴스 존재 여부 확인 -->
+    <select id="existsTodayNews" resultType="int">
+      SELECT COUNT(1)
+      FROM news_summary
+      WHERE member_id = #{memberId}
+        AND created_at >= CURRENT_DATE
+    </select>
+</mapper>

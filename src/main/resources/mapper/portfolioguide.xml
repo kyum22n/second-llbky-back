@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.portfolio.dao.PortfolioGuideDao">
+
+    <!-- 포트폴리오 가이드 생성 -->
+    <insert id="insertGuide" parameterType="PortfolioGuide"
+            useGeneratedKeys="true" keyProperty="guideId">
+
+        INSERT INTO portfolio_guide(
+            member_id,
+            title,
+            standard_id,
+            guide_content,
+            completion_percentage,
+            is_completed,
+            current_step,
+            total_steps,
+            guide_feedback
+        )
+        VALUES(
+            #{memberId},
+            #{title},
+            #{standardId},
+
+            <!-- guide_content JSONB -->
+            <choose>
+                <when test="guideContent != null">
+                    CAST(#{guideContent} AS JSONB)
+                </when>
+                <otherwise>
+                    NULL
+                </otherwise>
+            </choose>,
+
+            #{completionPercentage},
+            #{isCompleted},
+            #{currentStep},
+            #{totalSteps},
+
+            <!-- guide_feedback JSONB -->
+            <choose>
+                <when test="guideFeedback != null">
+                    CAST(#{guideFeedback} AS JSONB)
+                </when>
+                <otherwise>
+                    NULL
+                </otherwise>
+            </choose>
+        )
+    </insert>
+
+    <!-- 가이드 ID로 조회 -->
+    <select id="selectGuideById" parameterType="int" resultType="PortfolioGuide">
+        SELECT 
+            guide_id,
+            member_id,
+            title,
+            standard_id,
+            guide_content,
+            completion_percentage,
+            is_completed,
+            current_step,
+            total_steps,
+            guide_feedback,
+            created_at,
+            updated_at
+        FROM portfolio_guide 
+        WHERE guide_id = #{guideId}
+    </select>
+
+    <!-- 회원별 가이드 목록 조회 -->
+    <select id="selectGuidesByMemberId" parameterType="int" resultType="PortfolioGuide">
+        SELECT 
+            guide_id,
+            member_id,
+            title,
+            standard_id,
+            guide_content,
+            completion_percentage,
+            is_completed,
+            current_step,
+            total_steps,
+            guide_feedback,
+            created_at,
+            updated_at
+        FROM portfolio_guide 
+        WHERE member_id = #{memberId}
+        ORDER BY updated_at DESC
+    </select>
+
+    <!-- 🔥 가이드 콘텐츠 업데이트 (Map 파라미터 지원) -->
+    <update id="updateGuideContent" parameterType="map">
+        UPDATE portfolio_guide 
+        SET 
+            guide_content = CAST(#{guideContent, jdbcType=VARCHAR} AS JSONB),
+            <if test="completionPercentage != null">
+            completion_percentage = #{completionPercentage},
+            </if>
+            <if test="currentStep != null">
+            current_step = #{currentStep},
+            </if>
+            updated_at = NOW()
+        WHERE guide_id = #{guideId}
+    </update>
+    
+    <!-- 🔥 전체 가이드 진행상황 업데이트 (Map 파라미터) -->
+    <update id="updateGuideProgress" parameterType="map">
+        UPDATE portfolio_guide 
+        SET 
+            guide_content = CAST(#{guideContent, jdbcType=VARCHAR} AS JSONB),
+            completion_percentage = #{completionPercentage},
+            current_step = #{currentStep},
+            
+            <if test="isCompleted != null">
+            is_completed = #{isCompleted},
+            </if>
+            updated_at = NOW()
+        WHERE guide_id = #{guideId}
+    </update>
+
+    <!-- 🔥 AI 가이드 피드백 업데이트 (개별 필드) -->
+    <update id="updateGuideFeedback" parameterType="map">
+        UPDATE portfolio_guide 
+        SET 
+            guide_feedback = CAST(#{guideFeedback, jdbcType=VARCHAR} AS JSONB),
+
+            updated_at = NOW()
+
+        WHERE guide_id = #{guideId}
+    </update>
+
+    <delete id="deleteAllGuides">
+        delete from news_summary
+        where member_id= #{memberId}
+    </delete>
+
+    <delete id="deleteGuideById">
+    DELETE FROM portfolio_guide 
+    WHERE guide_id = #{guideId} AND member_id = #{memberId}
+    </delete>
+
+</mapper>

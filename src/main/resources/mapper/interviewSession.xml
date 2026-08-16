@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.interview.dao.InterviewSessionDao">
+  <!-- 면접 세션 생성 -->
+  <insert id="insertInterviewSession" 
+          parameterType="com.example.demo.interview.entity.InterviewSession"
+          useGeneratedKeys="true"
+          keyProperty="sessionId"
+          keyColumn="session_id"
+  >
+    INSERT INTO interview_session
+      (member_id, interview_type, target_company, document_file_name, document_file_type, document_file_data,
+      report_feedback)
+    VALUES
+      (#{memberId}, #{interviewType}, #{targetCompany}, #{documentFileName}, #{documentFileType}, #{documentFileData}, 
+      CAST(#{reportFeedback} AS JSONB))
+    RETURNING session_id
+  </insert>
+
+  <!-- 면접 세션 종료 시 종합 피드백 생성 -->
+  <update id="updateInterviewFeedback" parameterType="com.example.demo.interview.entity.InterviewSession">
+    UPDATE interview_session
+    SET report_feedback = CAST(#{reportFeedback} AS JSONB),  
+        updated_at = NOW()
+    WHERE session_id = #{sessionId}
+  </update>
+
+  <!-- 종료된 면접 세션(면접 리포트) 목록 조회 -->
+  <select id="selectAllInterviewSessions" resultType="com.example.demo.interview.entity.InterviewSession">
+    SELECT session_id, 
+           member_id, 
+           interview_type, 
+           target_company, 
+           document_file_name,
+           document_file_type,
+           document_file_data,
+           report_feedback, 
+           created_at, 
+           updated_at
+    FROM interview_session
+    WHERE member_id = #{memberId}
+    ORDER BY created_at DESC
+  </select>
+
+  <!-- 면접 리포트 상세보기 시 면접 정보 조회 -->
+  <select id="selectOneInterviewSession" resultType="com.example.demo.interview.entity.InterviewSession">
+    SELECT session_id, 
+           member_id, 
+           interview_type,
+           target_company, 
+           document_file_name,
+           document_file_type,
+           document_file_data,
+           report_feedback, 
+           created_at, 
+           updated_at
+    FROM interview_session
+    WHERE session_id = #{sessionId}
+  </select>
+
+</mapper>

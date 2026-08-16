@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.portfolio.dao.PortfolioStandardDao">
+
+   
+
+    <!-- 평가 기준 ID로 조회 -->
+    <select id="selectStandardById" parameterType="int" resultType="PortfolioStandard">
+        SELECT 
+            standard_id,
+            standard_name,
+            standard_description,
+            prompt_template,
+            weight_percentage,
+            job_group,
+            job_role,
+            
+            created_at,
+            updated_at,
+            evaluation_items,
+            score_range_description
+        FROM portfolio_standard 
+        WHERE standard_id = #{standardId}
+    </select>
+
+    <!-- 모든 평가 기준 조회 -->
+    <select id="selectAllStandards" resultType="PortfolioStandard">
+        SELECT 
+            standard_id,
+            standard_name,
+            standard_description,
+            prompt_template,
+            weight_percentage,
+            job_group,
+            job_role,
+            created_at,
+            updated_at,
+            evaluation_items,
+            score_range_description
+        FROM portfolio_standard 
+        ORDER BY standard_name
+    </select>
+
+    <!-- 직무 정보로 표준 조회 (LIKE 패턴으로 유연한 매칭) -->
+    <select id="selectStandardsByJobInfo" resultType="PortfolioStandard">
+        SELECT 
+            standard_id,
+            standard_name,
+            standard_description,
+            prompt_template,
+            weight_percentage,
+            job_group,
+            job_role,
+            created_at,
+            updated_at,
+            evaluation_items,
+            score_range_description
+        FROM portfolio_standard
+        WHERE 
+            (job_group LIKE '%' || #{param1} || '%' OR #{param1} LIKE '%' || job_group || '%')
+            AND (job_role LIKE '%' || #{param2} || '%' OR #{param2} LIKE '%' || job_role || '%' OR job_role IS NULL)
+        ORDER BY 
+            CASE WHEN job_role IS NOT NULL THEN 0 ELSE 1 END,
+            weight_percentage DESC, 
+            standard_id ASC
+    </select>
+
+    <!-- 직군별 표준 조회 (is_general 제거) -->
+    <select id="selectStandardsByJobGroup" parameterType="string" resultType="PortfolioStandard">
+        SELECT 
+            standard_id,
+            standard_name,
+            standard_description,
+            prompt_template,
+            weight_percentage,
+            job_group,
+            job_role,
+            created_at,
+            updated_at,
+            evaluation_items,
+            score_range_description
+        FROM portfolio_standard
+        WHERE job_group = #{jobGroup}
+        ORDER BY 
+            weight_percentage DESC,
+            standard_id ASC
+    </select>
+
+
+    <!-- 평가 기준명으로 조회 -->
+    <select id="selectStandardByName" parameterType="String" resultType="PortfolioStandard">
+        SELECT 
+            standard_id,
+            standard_name,
+            standard_description,
+            prompt_template,
+            weight_percentage,
+            job_group,
+            job_role,
+            created_at,
+            updated_at,
+            evaluation_items,
+            score_range_description
+        FROM portfolio_standard 
+        WHERE standard_name = #{standardName}
+    </select>
+
+    
+
+    <!-- 평가 기준 개수 조회 -->
+    <select id="countStandards" resultType="int">
+        SELECT COUNT(*) 
+        FROM portfolio_standard
+    </select>
+
+    <!-- 특정 가중치 이상의 평가 기준 조회 -->
+    <select id="selectStandardsByMinWeight" parameterType="int" resultType="PortfolioStandard">
+        SELECT 
+            standard_id,
+            standard_name,
+            standard_description,
+            prompt_template,
+            weight_percentage,
+            job_group,
+            job_role,
+            created_at,
+            updated_at,
+            evaluation_items,
+            score_range_description
+        FROM portfolio_standard 
+        WHERE weight_percentage >= #{minWeight}
+        ORDER BY weight_percentage DESC
+    </select>
+
+   
+   
+
+
+</mapper>

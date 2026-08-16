@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "https://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+  <settings>
+    <setting name="mapUnderscoreToCamelCase" value="true" />
+    <setting name="jdbcTypeForNull" value="NULL" />
+    <setting name="logImpl" value="STDOUT_LOGGING" />
+  </settings>
+
+  <typeAliases>
+    <typeAlias type="com.example.demo.member.entity.Member" alias="Member" />
+
+    <typeAlias type="com.example.demo.portfolio.entity.Portfolio" alias="Portfolio" />
+    <typeAlias type="com.example.demo.portfolio.entity.PortfolioImage" alias="PortfolioImage" />
+    <typeAlias type="com.example.demo.portfolio.entity.PortfolioStandard" alias="PortfolioStandard" />
+    <typeAlias type="com.example.demo.portfolio.entity.PortfolioGuide" alias="PortfolioGuide" />
+    <typeAlias type="com.example.demo.resume.entity.Resume" alias="Resume" />
+
+    <typeAlias type="com.example.demo.coverletter.entity.CoverLetter" alias="CoverLetter" />
+
+    <typeAlias type="com.example.demo.learning.entity.Learning" alias="Learning" />
+    <typeAlias type="com.example.demo.learning.entity.LearningWeek" alias="LearningWeek" />
+    <typeAlias type="com.example.demo.learning.entity.LearningDay" alias="LearningDay" />
+
+    <typeAlias type="com.example.demo.newstrend.entity.JobInsight" alias="JobInsight" />
+    <typeAlias type="com.example.demo.newstrend.entity.NewsSummary" alias="NewsSummary" />
+    <typeAlias type="com.example.demo.newstrend.entity.SavedKeyword" alias="SavedKeyword" />
+    <typeAlias type="com.example.demo.newstrend.entity.TrendInsight" alias="TrendInsight" />
+    
+    <typeAlias type="com.example.demo.interview.entity.InterviewSession" alias="InterviewSession" />
+    <typeAlias type="com.example.demo.interview.entity.InterviewQuestion" alias="InterviewQuestion" />
+    <typeAlias type="com.example.demo.interview.entity.InterviewAnswer" alias="InterviewAnswer" />
+
+  </typeAliases>
+
+</configuration>

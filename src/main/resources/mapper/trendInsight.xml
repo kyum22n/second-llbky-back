@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.newstrend.dao.TrendInsightDao">
+
+  <!-- LLM 생성 결과 저장 -->
+  <insert id="insertTrendInsight"
+          parameterType="TrendInsight"
+          useGeneratedKeys="true"
+          keyProperty="trendId">
+    INSERT INTO trend_insight(
+      member_id,
+      start_date,
+      end_date,
+      trend_json,
+      insight_json
+    )
+    VALUES(
+      #{memberId},
+      #{startDate},
+      #{endDate},
+      CAST(#{trendJson} AS JSONB),
+      CAST(#{insightJson} AS JSONB)
+    )
+  </insert>
+
+  <!-- 최신 인사이트 조회 -->
+  <select id="selectLatestTrendInsight"
+          resultType="TrendInsight">
+    SELECT
+      trend_id,
+      member_id,
+      start_date,
+      end_date,
+      trend_json,
+      insight_json,
+      created_at
+    FROM trend_insight
+    WHERE member_id = #{memberId}
+    ORDER BY created_at DESC
+    LIMIT 1
+  </select>
+
+  <!-- 단건 삭제 -->
+  <delete id="deleteTrendInsight">
+    DELETE FROM trend_insight
+    WHERE trend_id = #{trendId}
+  </delete>
+
+  <!-- 전체 삭제 -->
+  <delete id="deleteTrendInsightByMember">
+    DELETE FROM trend_insight
+    WHERE member_id = #{memberId}
+  </delete>
+
+</mapper>

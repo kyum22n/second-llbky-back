@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.learning.dao.LearningDao">
+
+    <!-- INSERT -->
+    <!-- 처음 로드맵 생성할 때 -->
+    <insert id="insert" parameterType="com.example.demo.learning.entity.Learning" useGeneratedKeys="true" keyProperty="learningId" keyColumn="learning_id">
+        INSERT INTO learning (member_id, title, status)
+        VALUES (#{memberId}, #{title}, #{status});
+    </insert>
+
+    <!-- SELECT: learningId로 조회 -->
+    <select id="selectedByLearningId" parameterType="int" resultType="com.example.demo.learning.entity.Learning">
+        SELECT
+            learning_id,
+            member_id,
+            title,
+            status,
+            learning_summary,
+            learning_recommendation,
+            created_at,
+            updated_at
+        FROM learning
+        WHERE learning_id = #{learningId}
+    </select>
+
+    <!-- SELECT: 사용자별 전체 학습 리스트 조회 -->
+    <select id="selectListByMemberId" parameterType="int" resultType="com.example.demo.learning.entity.Learning">
+        SELECT
+            learning_id,
+            member_id,
+            title,
+            status,
+            learning_summary,
+            learning_recommendation,
+            created_at,
+            updated_at
+        FROM learning
+        WHERE member_id = #{memberId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- SELECT: 상태별 학습 리스트 조회 -->
+    <select id="selectListByStatus" resultType="com.example.demo.learning.entity.Learning">
+        SELECT
+            learning_id,
+            member_id,
+            title,
+            status,
+            learning_summary,
+            learning_recommendation,
+            created_at,
+            updated_at
+        FROM learning
+        WHERE member_id = #{memberId} AND status = #{status}
+        ORDER BY created_at DESC;
+    </select>
+
+    <!-- SELECT: 사용자별 학습 개수 -->
+    <select id="countByMemberId" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM learning
+        WHERE member_id = #{memberId} AND status = #{status}
+    </select>
+
+    <!-- UPDATE: 학습 상태 또는 AI 요약 변경 -->
+    <update id="update" parameterType="com.example.demo.learning.entity.Learning">
+        UPDATE learning
+        SET
+          status = #{status},
+          learning_summary = #{learningSummary},
+          learning_recommendation = #{learningRecommendation},
+          updated_at = NOW()
+        WHERE learning_id = #{learningId}
+    </update>
+
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.learning.dao.LearningWeekDao">
+
+    <!-- INSERT -->
+    <!-- 처음 로드맵 생성할 때 -->
+    <insert id="insert" parameterType="com.example.demo.learning.entity.LearningWeek" useGeneratedKeys="true" keyProperty="weekId" keyColumn="week_id">
+        INSERT INTO learning_week (learning_id, week_number, title, goal, status)
+        VALUES (#{learningId}, #{weekNumber}, #{title}, #{goal}, #{status});
+    </insert>
+
+    <!-- SELECT: weekId로 주차 조회 -->
+    <select id="selectedByWeekId" parameterType="int" resultType="com.example.demo.learning.entity.LearningWeek">
+        SELECT
+            week_id,
+            learning_id,
+            week_number,
+            title,
+            goal,
+            status,
+            learning_week_summary,
+            created_at,
+            updated_at
+        FROM learning_week
+        WHERE week_id = #{weekId};
+    </select>
+
+    <!-- SELECT: 특정 학습 플랜의 모든 주차 조회 -->
+    <select id="selectListByLearningId" parameterType="int" resultType="com.example.demo.learning.entity.LearningWeek">
+        SELECT
+            week_id,
+            learning_id,
+            week_number,
+            title,
+            goal,
+            status,
+            learning_week_summary,
+            created_at,
+            updated_at
+        FROM learning_week
+        WHERE learning_id = #{learningId}
+        ORDER BY week_number ASC;
+    </select>
+
+
+    <!-- SELECT: 특정 학습 플랜 + 주차 번호로 단건 조회 -->
+    <select id="selectByLearningIdAndWeekNumber" resultType="com.example.demo.learning.entity.LearningWeek">
+        SELECT
+            week_id,
+            learning_id,
+            week_number,
+            title,
+            goal,
+            status,
+            learning_week_summary,
+            created_at,
+            updated_at
+        FROM learning_week
+        WHERE learning_id = #{learningId} AND week_number = #{weekNumber};
+    </select>
+
+
+    <!-- SELECT: 특정 학습 플랜의 총 주차 개수 -->
+    <select id="countByLearningId" parameterType="int" resultType="int">
+        SELECT COUNT(*)
+        FROM learning_week
+        WHERE learning_id = #{learningId};
+    </select>
+
+
+    <!-- UPDATE -->
+    <update id="update" parameterType="com.example.demo.learning.entity.LearningWeek">
+        UPDATE learning_week
+        SET
+            title = #{title},
+            goal = #{goal},
+            status = #{status},
+            learning_week_summary = #{learningWeekSummary},
+            updated_at = NOW()
+        WHERE week_id = #{weekId};
+    </update>
+
+</mapper>

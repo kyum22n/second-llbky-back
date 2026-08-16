@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.interview.dao.InterviewAnswerDao">
+  <!-- 답변 제출 -->
+  <insert id="insertInterviewAnswer" 
+          parameterType="com.example.demo.interview.entity.InterviewAnswer"
+          useGeneratedKeys="true"
+          keyProperty="answerId"
+  >
+    INSERT INTO interview_answer
+      (question_id, audio_file_name, audio_file_type, audio_file_data, video_file_name, video_file_type, video_file_data, 
+      answer_text, answer_feedback)
+    VALUES
+      (#{questionId}, #{audioFileName}, #{audioFileType}, #{audioFileData}, #{videoFileName}, #{videoFileType}, #{videoFileData}, 
+      #{answerText}, CAST(#{answerFeedback} AS JSONB))
+  </insert>
+
+  <!-- 답변 다시 제출 -->
+  <update id="updateInterviewAnswer" parameterType="com.example.demo.interview.entity.InterviewAnswer">
+    UPDATE interview_answer
+    SET audio_file_name = #{audioFileName}, 
+        audio_file_type = #{audioFileType}, 
+        audio_file_data = #{audioFileData}, 
+        video_file_name = #{videoFileName}, 
+        video_file_type = #{videoFileType}, 
+        video_file_data = #{videoFileData}, 
+        answer_text = #{answerText}, 
+        answer_feedback = CAST(#{answerFeedback} AS JSONB), 
+        updated_at = NOW()
+    WHERE answer_id = #{answerId}
+  </update>
+
+  <!-- 면접 질문 선택 시 연관된 답변 조회 -->
+  <select id="selectInterviewAnswerByQuestionId" resultType="com.example.demo.interview.entity.InterviewAnswer">
+    SELECT answer_id,
+           question_id, 
+           audio_file_name, 
+           audio_file_type, 
+           audio_file_data, 
+           video_file_name, 
+           video_file_type, 
+           video_file_data,
+           answer_text, 
+           answer_feedback, 
+           created_at,
+           updated_at
+    FROM interview_answer
+    WHERE question_id = #{questionId}
+  </select>
+
+  <!-- 답변 ID로 답변 조회 -->
+  <select id="selectOneAnswer" resultType="com.example.demo.interview.entity.InterviewAnswer">
+    SELECT answer_id,
+           question_id, 
+           audio_file_name, 
+           audio_file_type, 
+           audio_file_data, 
+           video_file_name, 
+           video_file_type, 
+           video_file_data,
+           answer_text, 
+           answer_feedback, 
+           created_at,
+           updated_at
+    FROM interview_answer
+    WHERE answer_id = #{answerId}
+  </select>
+
+  <!-- 답변 텍스트 업데이트(STT 변환된 텍스트) -->
+  <update id="updateAnswerText">
+    UPDATE interview_answer
+    SET answer_text = #{answerText},
+        updated_at = NOW()
+    WHERE answer_id = #{answerId}
+  </update>
+  
+  <!-- 답변 피드백 업데이트 -->
+  <update id="updateAnswerFeedback">
+    UPDATE interview_answer
+    SET answer_feedback = CAST(#{answerFeedback} AS JSONB),
+        updated_at = NOW()
+    WHERE answer_id = #{answerId}
+  </update>
+
+</mapper>

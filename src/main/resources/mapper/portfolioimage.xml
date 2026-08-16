@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.example.demo.portfolio.dao.PortfolioImageDao">
+ 
+    <!-- 이미지 생성  -->
+    <insert id="insertPortfolioImage" parameterType="PortfolioImage"
+     useGeneratedKeys="true" keyProperty="imageId">
+     INSERT INTO portfolio_image(
+      portfolio_id, page_no, page_feedback
+     )
+     VALUES(
+      #{portfolioId}, #{pageNo}, CAST(#{pageFeedback} AS JSONB)
+     )
+    </insert>
+
+    <!-- 특정 포트폴리오의 모든 이미지 조회 -->
+    <select id="selectImagesByPortfolioId" parameterType="int" resultType="PortfolioImage">
+      SELECT
+        image_id ,
+        portfolio_id , 
+        page_no, 
+        created_at,
+        page_feedback
+      FROM portfolio_image 
+      WHERE portfolio_id = #{portfolioId}
+      ORDER BY page_no ASC
+    </select>
+
+    <select id="selectBeforePage" resultType="PortfolioImage">
+      SELECT image_id, portfolio_id, page_no, page_feedback, created_at
+      FROM portfolio_image
+      WHERE portfolio_id = #{portfolioId} AND page_no = #{pageNo} - 1
+      LIMIT 1
+    </select>
+
+     <!-- 특정 포트폴리오의 특정 페이지 이미지 조회 -->
+    <select id="selectImageByPortfolioIdAndPageNo" parameterType="map"
+    resultType="PortfolioImage">
+      SELECT 
+        image_id ,
+        portfolio_id , 
+        page_no,  
+        created_at,
+        page_feedback
+      FROM portfolio_image 
+      WHERE portfolio_id = #{portfolioId} AND page_no = #{pageNo}
+     
+    </select>
+
+
+    <!-- ##### 통계 및 유틸리티 ##### -->
+    <!-- 특정 포트폴리오의 총 이미지(페이지) 수 조회 -->
+    <select id="countImagesByPortfolioId" 
+            parameterType="int" 
+            resultType="int">
+      SELECT COUNT(*) 
+      FROM portfolio_image 
+      WHERE portfolio_id = #{portfolioId}
+    </select>
+
+  </mapper>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.coverletter.dao.CoverLetterDao">
+  <!-- 자소서 저장 + 종합 피드백 생성 -->
+  <insert id="insertCoverLetter" 
+          parameterType="com.example.demo.coverletter.entity.CoverLetter"
+          useGeneratedKeys="true"
+          keyProperty="coverletterId"
+  >
+    INSERT INTO coverletter
+      (member_id, title, support_motive, growth_experience, job_capability, future_plan, 
+      cover_feedback)
+    VALUES
+      (#{memberId}, #{title}, #{supportMotive}, #{growthExperience}, #{jobCapability}, #{futurePlan}, 
+      CAST(#{coverFeedback} AS JSONB))
+  </insert>
+
+  <!-- 자소서 목록 조회 -->
+  <select id="selectAllCoverLetters" resultType="com.example.demo.coverletter.entity.CoverLetter">
+    SELECT coverletter_id, 
+           member_id, 
+           title, 
+           support_motive, 
+           growth_experience, 
+           job_capability, 
+           future_plan,
+           cover_feedback::text AS cover_feedback, 
+           created_at, 
+           updated_at
+    FROM coverletter
+    WHERE member_id = #{memberId}
+  </select>
+
+  <!-- 자소서 상세보기 -->
+  <select id="selectOneCoverLetter" resultType="com.example.demo.coverletter.entity.CoverLetter">
+    SELECT coverletter_id, 
+           member_id, 
+           title, 
+           support_motive, 
+           growth_experience, 
+           job_capability, 
+           future_plan,
+           cover_feedback::text AS cover_feedback, 
+           created_at, 
+           updated_at
+    FROM coverletter
+    WHERE coverletter_id = #{coverletterId}
+  </select>
+
+  <!-- 자소서 수정하기 -->
+  <update id="updateCoverLetter" parameterType="com.example.demo.coverletter.entity.CoverLetter">
+    UPDATE coverletter
+    SET member_id = #{memberId},
+      title = #{title},
+      support_motive = #{supportMotive},
+      growth_experience = #{growthExperience}, 
+      job_capability = #{jobCapability}, 
+      future_plan = #{futurePlan}, 
+      cover_feedback = CAST(#{coverFeedback} AS JSONB),  
+      updated_at = NOW()
+    WHERE coverletter_id = #{coverletterId} AND member_id = #{memberId}
+  </update>
+
+  <!-- 자소서 삭제하기 -->
+  <delete id="deleteCoverLetter">
+    DELETE FROM coverletter
+    WHERE coverletter_id = #{coverletterId} AND member_id = #{memberId}
+  </delete>
+
+</mapper>

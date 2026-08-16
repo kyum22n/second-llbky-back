@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.learning.dao.LearningDayDao">
+
+    <!-- INSERT -->
+    <!-- 처음 로드맵 생성할 때 -->
+    <insert id="insert" parameterType="com.example.demo.learning.entity.LearningDay" useGeneratedKeys="true" keyProperty="dayId" keyColumn="day_id">
+        INSERT INTO learning_day (week_id, day_number, title, content, status)
+        VALUES (#{weekId}, #{dayNumber}, #{title}, #{content}, #{status});
+    </insert>
+
+    <!-- SELECT: dayId로 조회 -->
+    <select id="selectedByDayId" parameterType="int" resultType="com.example.demo.learning.entity.LearningDay">
+        SELECT
+            day_id,
+            week_id,
+            day_number,
+            title,
+            content,
+            study_time_min,
+            status,
+            learning_day_summary,
+            created_at,
+            updated_at
+        FROM learning_day
+        WHERE day_id = #{dayId};
+    </select>
+
+    <!-- SELECT: 특정 주차 전체 일차 조회 -->
+    <select id="selectListByWeekId" parameterType="int" resultType="com.example.demo.learning.entity.LearningDay">
+        SELECT
+            day_id,
+            week_id,
+            day_number,
+            title,
+            content,
+            study_time_min,
+            status,
+            learning_day_summary,
+            created_at,
+            updated_at
+        FROM learning_day
+        WHERE week_id = #{weekId}
+        ORDER BY day_number ASC;
+    </select>
+
+    <!-- SELECT: 특정 학습 플랜 전체 일차 조회 -->
+    <select id="selectListByLearningId" parameterType="int" resultType="com.example.demo.learning.entity.LearningDay">
+        SELECT
+            d.day_id,
+            d.week_id,
+            d.day_number,
+            d.title,
+            d.content,
+            d.study_time_min,
+            d.status,
+            d.learning_day_summary,
+            d.created_at,
+            d.updated_at
+        FROM learning_day d
+        JOIN learning_week w ON d.week_id = w.week_id
+        WHERE w.learning_id = #{learningId}
+        ORDER BY w.week_id ASC, d.day_number ASC;
+    </select>
+
+    <!-- SELECT: 주차 + 일차 번호로 1개 조회 -->
+    <select id="selectByWeekIdAndDayNumber" resultType="com.example.demo.learning.entity.LearningDay">
+         SELECT
+            day_id,
+            week_id,
+            day_number,
+            title,
+            content,
+            study_time_min,
+            status,
+            learning_day_summary,
+            created_at,
+            updated_at
+        FROM learning_day
+        WHERE week_id = #{weekId} AND day_number = #{dayNumber};
+    </select>
+
+    <!-- UPDATE -->
+    <update id="update" parameterType="com.example.demo.learning.entity.LearningDay">
+        UPDATE learning_day
+        SET
+            title = #{title},
+            content = #{content},
+            learning_day_summary = #{learningDaySummary},
+            status = #{status},
+            updated_at = NOW()
+        WHERE day_id = #{dayId};
+    </update>
+
+</mapper>

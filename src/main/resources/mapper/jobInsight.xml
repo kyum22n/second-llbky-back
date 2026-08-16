@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.newstrend.dao.JobInsightDao">
+  <!-- LLM 생성 결과 저장 -->
+   <insert id="insertJobInsight"
+    parameterType="JobInsight">
+      insert into job_insight(
+        member_id, analysis_json, related_jobs_json
+      )
+      values(
+        #{memberId}, 
+        CAST(#{analysisJson} AS JSONB),
+        CAST(#{relatedJobsJson} AS JSONB)
+      )
+  </insert>
+
+  <!-- 직무 인사이트 조회 -->
+   <select id="selectLatestJobInsight"
+    resultType="JobInsight">
+    select
+      insight_id, 
+      member_id,
+      analysis_json, 
+      related_jobs_json,
+      created_at
+    from job_insight
+    where member_id = #{memberId}
+    order by created_at desc
+    limit 1
+  </select>
+
+  <!-- 키워드 저장/삭제 시 성장 제안 수정-->
+   <update id="updateAnalysisJson"
+    parameterType="JobInsight">
+    update job_insight
+    set
+      analysis_json = CAST(#{analysisJson} AS JSONB)
+    where insight_id = #{insightId}
+  </update>
+
+  <!-- 단건 삭제 -->
+   <delete id="deleteJobInsight">
+    delete from job_insight
+    where insight_id = #{insightId}
+   </delete>
+
+  <!-- 전체 삭제 -->
+   <delete id="deleteJobInsightByMember">
+    delete from job_insight
+    where member_id = #{memberId}
+   </delete>
+</mapper>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.member.dao.MemberDao">
+    <insert id="insert" parameterType="Member" useGeneratedKeys="true" keyProperty="memberId">
+        INSERT INTO member
+        (member_name, login_id, member_password, member_email, job_group, job_role, career_years)
+        VALUES
+        (#{memberName}, #{loginId}, #{memberPassword}, #{memberEmail}, #{jobGroup}, #{jobRole}, #{careerYears})
+    </insert>
+
+    <select id="findById" parameterType="int" resultType="Member">
+        SELECT
+            member_id,
+            member_name,
+            login_id,
+            member_password,
+            member_email,
+            job_group,
+            job_role,
+            career_years,
+            created_at,
+            updated_at
+        FROM member
+        WHERE member_id = #{memberId}
+    </select>
+
+    <select id="findByLoginId" parameterType="string" resultType="Member">
+        SELECT
+            member_id,
+            member_name,
+            login_id,
+            member_password,
+            member_email,
+            job_group,
+            job_role,
+            career_years,
+            created_at,
+            updated_at
+        FROM member
+        WHERE login_id = #{loginId}
+    </select>
+
+     <update id="update" parameterType="Member">
+        UPDATE member
+        SET 
+            member_email = #{memberEmail},
+            job_group = #{jobGroup},
+            job_role = #{jobRole},
+            career_years = #{careerYears},
+            updated_at = now()
+        WHERE member_id = #{memberId}
+    </update>
+</mapper>

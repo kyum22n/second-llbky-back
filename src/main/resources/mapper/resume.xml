@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.resume.dao.ResumeDao">
+
+<!--이력서 생성-->
+<insert id="insertResume" parameterType="Resume"
+        useGeneratedKeys="true" keyProperty="resumeId">
+    INSERT INTO resume(
+        member_id, title, career_info, education_info, skills, 
+        certificates, awards, activities, resume_feedback, created_at, updated_at
+    ) VALUES(
+        #{memberId}, #{title}, 
+        CAST(#{careerInfo} AS jsonb), CAST(#{educationInfo} AS jsonb), CAST(#{skills} AS jsonb),
+        CAST(#{certificates} AS jsonb), CAST(#{awards} AS jsonb), CAST(#{activities} AS jsonb),
+        CAST(#{resumeFeedback} AS jsonb), NOW(), NOW()
+    )
+</insert>
+
+  <!-- 이력서 상세 조회-->
+   <select id="selectResumeById" parameterType="int" resultType="Resume">
+        SELECT 
+            resume_id, member_id, title,
+            career_info, education_info, skills,
+            certificates, awards, activities,
+            resume_feedback, created_at, updated_at
+        FROM resume
+        WHERE resume_id = #{resumeId}
+    </select>
+
+
+
+    <!-- 회원별 이력서 목록 조회 -->
+    <select id="selectResumesByMemberId" resultType="Resume">
+        SELECT resume_id, member_id, title, 
+               career_info,
+               education_info,
+               skills,
+               certificates,
+               awards,
+               activities,
+               resume_feedback,
+               created_at, updated_at
+        FROM resume 
+        WHERE member_id = #{memberId}
+        ORDER BY updated_at DESC
+    </select>
+
+    <!-- 이력서 수정 -->
+    <update id="updateResume" parameterType="Resume">
+        UPDATE resume 
+        SET
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="careerInfo != null">
+                career_info = CAST(#{careerInfo} AS jsonb),
+            </if>
+
+            <if test="educationInfo != null">
+                education_info = CAST(#{educationInfo} AS jsonb),
+            </if>
+
+            <if test="skills != null">
+                skills = CAST(#{skills} AS jsonb),
+            </if>
+
+            <if test="certificates != null">
+                certificates = CAST(#{certificates} AS jsonb),
+            </if>
+
+            <if test="awards != null">
+                awards = CAST(#{awards} AS jsonb),
+            </if>
+
+            <if test="activities != null">
+                activities = CAST(#{activities} AS jsonb),
+            </if>
+            updated_at = NOW()
+        WHERE resume_id = #{resumeId}
+    </update>
+
+     <!-- AI 피드백만 업데이트 -->
+    <update id="updateResumeFeedback">
+        UPDATE resume SET 
+            resume_feedback = CAST(#{feedback} AS jsonb),
+            updated_at = NOW()
+        WHERE resume_id = #{resumeId}
+    </update>
+
+    <!-- 이력서 삭제 -->
+    <delete id="deleteResume" parameterType="int">
+        DELETE FROM resume 
+        WHERE resume_id = #{resumeId}
+    </delete>
+
+    <!-- 이력서 개수 조회 -->
+    <select id="countResumesByMemberId" parameterType="int" resultType="int">
+        SELECT COUNT(*)
+        FROM resume 
+        WHERE member_id = #{memberId}
+    </select>
+
+    <!-- 최신 이력서 목록 (AI 분석용) -->
+    <select id="selectRecentResumes" parameterType="int" resultType="Resume">
+        SELECT resume_id, member_id, title, 
+               career_info,
+               education_info,
+               skills,
+               certificates,
+               awards,
+               activities,
+               resume_feedback,
+               created_at, updated_at
+        FROM resume 
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+    
+</mapper>
