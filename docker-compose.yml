@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: llbky-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: llbky
+      POSTGRES_USER: llbky
+      POSTGRES_PASSWORD: llbky
+    ports:
+      # 호스트 5433 -> 컨테이너 5432. 5432는 로컬에 이미 설치된 Windows PostgreSQL
+      # 서비스가 점유하고 있을 수 있어(포트 충돌 시 엉뚱한 서버로 연결되어 인증 오류가 남)
+      # 호스트 쪽 포트를 5433으로 다르게 잡음.
+      - "5433:5432"
+    volumes:
+      - ./.docker/pgdata:/var/lib/postgresql/data
+      - ./docs/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llbky -d llbky"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
