@@ -1,6 +1,6 @@
 # 배포 결과 검증 보고서
 
-- **작성/갱신일**: 2026-09-04
+- **작성/갱신일**: 2026-09-04 (2026-09-07 재검증 — §9 참고)
 - **대상**: `docs/prompts/db-deploy-setup-prompt.md` 2번 프롬프트(Vercel + Render + Neon 배포) 실행 결과 재검증
 - **배포 URL**
   - 프론트엔드(Vercel): https://second-llbky-front.vercel.app
@@ -114,6 +114,21 @@
 5. `NEWS_API_KEY`/`GOOGLE_SEARCH_API_KEY`/`GOOGLE_SEARCH_ENGINE_ID`가 코드에서 전혀 사용되지 않는 죽은 설정 — 배포 시 값 없이 진행해도 무방함을 확인
 6. 네이버 개발자센터 애플리케이션 등록 화면의 "사용 API" 드롭다운에 "검색"/"데이터랩" 옵션이 안 보이는 현상 — 원격 확인 불가로 **미해결, 사용자 재확인 필요**
 7. (신규) 콜드 스타트 실측치(약 105초)가 문서상 가정("수십 초")보다 길어서 문서 갱신 필요
+
+## 9. 재검증 (2026-09-07)
+
+README 정리 작업 중 배포 URL이 여전히 유효한지 브라우저로 직접 재확인했다.
+
+| 확인 | 결과 |
+|---|---|
+| `GET https://second-llbky-back.onrender.com/` | 404 (문서 §1과 동일 — DispatcherServlet 정상 기동 상태의 정상적인 404) |
+| `GET https://second-llbky-back.onrender.com/health` | 200, `{"status":"UP"}` |
+| `GET https://second-llbky-front.vercel.app/login` | 200, 정적 리소스(css/js) 전부 정상 로드 |
+| 존재하지 않는 계정으로 로그인 시도 (프론트 `/login` 폼) | 콘솔에 404 + **500** 에러 발생, alert 팝업 표시 — §"발견된 이슈" #4(`MemberService.login()`이 로그인 실패 시 500 반환)가 **그대로 재현됨, 여전히 미해결** |
+
+CORS 관련 에러 메시지 없이 요청이 백엔드까지 도달해 500 응답을 받았으므로, §4에서 확인한 CORS 허용 설정(Vercel 도메인)은 계속 정상 동작 중인 것으로 판단된다. 콜드 스타트 재실측, Render/Vercel/Neon 과금 대시보드 재확인은 이번 회차에서는 생략했다(변경 사유 없음).
+
+**결론**: 2026-09-04 검증 시점과 비교해 인프라 상태에 달라진 점 없음. 유일한 미해결 이슈(로그인 500)도 동일하게 남아있다.
 
 ## 남은 위험/할 일
 
