@@ -17,9 +17,13 @@
   </insert>
 
   <!-- 사용자 예상 면접 질문 추가 -->
-  <insert id="insertCustomQuestion" parameterType="com.example.demo.interview.entity.InterviewQuestion">
+  <insert id="insertCustomQuestion"
+          parameterType="com.example.demo.interview.entity.InterviewQuestion"
+          useGeneratedKeys="true"
+          keyProperty="questionId"
+  >
     INSERT INTO interview_question
-      (session_id, question_text, created_at)
+      (session_id, question_text)
     VALUES
       (#{sessionId}, #{questionText})
   </insert>

@@ -1,5 +1,7 @@
 package com.example.demo.member.service;
 
+import java.util.NoSuchElementException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,11 +60,11 @@ public class MemberService {
     Member member = memberDao.findByLoginId(request.getLoginId());
 
     if (member == null) {
-      throw new RuntimeException("아이디가 존재하지 않습니다.");
+      throw new NoSuchElementException("아이디가 존재하지 않습니다.");
     }
 
     if (!member.getMemberPassword().equals(request.getPassword())) {
-      throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+      throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
     }
     
     MemberResponse response = new MemberResponse();

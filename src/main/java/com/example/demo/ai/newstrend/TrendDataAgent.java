@@ -78,8 +78,8 @@ public class TrendDataAgent {
 
       String response = webClient.post()
           .uri(naverTrendUrl)
-          .header("X-Naver-Client-Id", naverClientId)
-          .header("X-Naver-Client-Secret", naverClientSecret)
+          .header("X-NCP-APIGW-API-KEY-ID", naverClientId)
+          .header("X-NCP-APIGW-API-KEY", naverClientSecret)
           .bodyValue(requestbody) // 요청 바디 JSON으로 직렬화해서 전송
           .retrieve()
           .bodyToMono(String.class)

@@ -184,8 +184,18 @@ public class InterviewService {
             request.setDocumentFileType(documentFile.getContentType());
         }
 
+        // 지원 기업명이 있으면 인재상/핵심가치를 사전 조회해 질문 생성에 반영
+        String companyIdealTalent = null;
+        if (targetCompany != null && !targetCompany.isBlank()) {
+            try {
+                companyIdealTalent = companyIdealTalentAgent.searchCompanyIdealTalent(targetCompany).getCoreValues();
+            } catch (Exception e) {
+                log.warn("기업 인재상 조회 실패 - targetCompany: {}", targetCompany, e);
+            }
+        }
+
         // Agent 호출
-        List<AiQuestionResponse> questionList = createQuestionAgent.createQuestion(request);
+        List<AiQuestionResponse> questionList = createQuestionAgent.createQuestion(request, companyIdealTalent);
 
         return questionList;
     }

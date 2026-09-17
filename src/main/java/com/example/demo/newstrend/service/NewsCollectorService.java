@@ -44,7 +44,7 @@ public class NewsCollectorService {
 
     public NewsCollectorService(WebClient.Builder webClientBuilder, NewsSummaryService newsSummaryService) {
         this.webClient = webClientBuilder
-                .baseUrl("https://openapi.naver.com/v1/search")
+                .baseUrl("https://naverapihub.apigw.ntruss.com/search/v1")
                 .build();
 
     }
@@ -58,13 +58,13 @@ public class NewsCollectorService {
 
         String result = webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/news.json")
+                        .path("/news")
                         .queryParam("query", keyword)
                         .queryParam("display", Math.min(display, 100))
                         .queryParam("sort", "date")
                         .build())
-                .header("X-Naver-Client-Id", clientId)
-                .header("X-Naver-Client-Secret", clientSecret)
+                .header("X-NCP-APIGW-API-KEY-ID", clientId)
+                .header("X-NCP-APIGW-API-KEY", clientSecret)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();

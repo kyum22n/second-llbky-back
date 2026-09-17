@@ -132,7 +132,7 @@
     </update>
 
     <delete id="deleteAllGuides">
-        delete from news_summary
+        delete from portfolio_guide
         where member_id= #{memberId}
     </delete>
 

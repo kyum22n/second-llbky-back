@@ -35,10 +35,10 @@ public class CompanySearchAgent {
   ) {
     this.chatClient = chatClientBuilder.build();
     this.webClient = webClientBuilder
-                .baseUrl("https://openapi.naver.com")
+                .baseUrl("https://naverapihub.apigw.ntruss.com/search/v1") // 네이버 검색 API
                 .build();
   }
-  
+
   public List<String> searchCompanyNames(String query) {
 
     if (query == null || query.isBlank()) { // 아무것도 입력 안했을 경우 빈 리스트 리턴
@@ -47,14 +47,14 @@ public class CompanySearchAgent {
 
     String response = webClient.get()
       .uri(uriBuilder -> uriBuilder
-        .path("/v1/search/webkr.json") // 웹문서 검색 API
+        .path("/webkr") // 웹문서 검색 API
         .queryParam("query", query)
         .queryParam("display", 10) // 검색 결과 개수
         .queryParam("sort", "date") // 날짜순
         .build()
       )
-      .header("X-Naver-Client-Id", clientId)
-      .header("X-Naver-Client-Secret", clientSecret)
+      .header("X-NCP-APIGW-API-KEY-ID", clientId)
+      .header("X-NCP-APIGW-API-KEY", clientSecret)
       .retrieve() // 응답 준비
       .bodyToMono(String.class) // Mono<String> 리턴
       .block(); // 실제 String으로 변환

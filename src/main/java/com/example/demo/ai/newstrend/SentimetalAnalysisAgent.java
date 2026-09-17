@@ -78,6 +78,8 @@ public class SentimetalAnalysisAgent {
                   "overallSummary": ""
                 }
 
+                출력 형식:
+                %s
                         """.formatted(format);
 
         String userPrompt = """

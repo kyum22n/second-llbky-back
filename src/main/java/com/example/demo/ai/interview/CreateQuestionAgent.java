@@ -30,8 +30,8 @@ public class CreateQuestionAgent {
     this.chatClient = chatClientBuilder.build();
   }
 
-  public List<AiQuestionResponse> createQuestion(QuestionRequest request) throws Exception {
-    
+  public List<AiQuestionResponse> createQuestion(QuestionRequest request, String companyIdealTalent) throws Exception {
+
     // 사용자의 직무, 직군 추출
     Member member = memberDao.findById(request.getMemberId());
     String jobGroup = member.getJobGroup();
@@ -70,6 +70,11 @@ public class CreateQuestionAgent {
         %s
         """.formatted(format);
 
+    // 기업 인재상/핵심가치 (없으면 빈 문자열)
+    String idealTalentText = (companyIdealTalent == null || companyIdealTalent.isBlank())
+        ? ""
+        : companyIdealTalent;
+
     // User prompt
     String prompt = """
         다음 정보를 기반으로 5개의 면접 질문을 생성하세요.
@@ -78,14 +83,16 @@ public class CreateQuestionAgent {
         [사용자의 직군] %s
         [면접 유형] %s
         [지원 기업명] %s
+        [기업 인재상/핵심가치] %s
         [선택된 키워드] %s
         [서류 내용] %s
         면접 유형이 "종합"이면 인성/가치관/경험 중심 질문만 생성합니다.
         면접 유형이 "직무"이면 기술 기반 질문만 생성합니다.
+        [기업 인재상/핵심가치]가 제공된 경우, 해당 기업이 실제로 중요하게 여기는 가치와 무관하지 않도록 질문에 반영하세요.
 
         ※ 만약 일부 정보가 비어 있어도, 반드시 5개의 질문을 생성하세요.
         """
-        .formatted(jobGroup, jobRole, request.getType(), request.getTargetCompany(), keywords, documentText);
+        .formatted(jobGroup, jobRole, request.getType(), request.getTargetCompany(), idealTalentText, keywords, documentText);
 
     // LLM 호출
     String responseJson = chatClient.prompt()

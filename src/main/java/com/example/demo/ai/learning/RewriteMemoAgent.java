@@ -84,20 +84,21 @@ public class RewriteMemoAgent {
             newMemo = origin;
         }
 
-        // DB에 메모 저장
+        // 응답으로 보여줄 내용(거부 안내 또는 정리된 메모)은 메모리상 day 객체에 반영
         day.setLearningDaySummary(newMemo);
-        
+
         // 검증 실패/성공 상태 처리 분기
         Boolean valid = checkResult.getIsValid() != null ? checkResult.getIsValid() : false;
 
         if (!valid) {
+            // 검증 실패 시에는 DB에 반영하지 않는다 (거부 안내 문구가 저장되지 않도록)
             day.setStatus("진행 중");
         } else {
             day.setStatus("완료");
-        }
 
-        // 일일 학습 테이블에서 learningDaySummary랑 status만 업데이트
-        learningDayDao.update(day);
+            // 일일 학습 테이블에서 learningDaySummary랑 status만 업데이트
+            learningDayDao.update(day);
+        }
 
         return day;
     }
