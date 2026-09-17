@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "second-llbky-front",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "serve", "--prefix", "C:\\kyum\\project\\second-llbky-front"],
+      "port": 80
+    }
+  ]
+}

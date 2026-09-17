@@ -3,6 +3,7 @@ package com.example.demo.portfolio.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +19,9 @@ import com.example.demo.portfolio.dto.response.PortfolioSummaryResponse;
 import com.example.demo.portfolio.entity.Portfolio;
 import com.example.demo.portfolio.entity.PortfolioImage;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class PortfolioService {
 
@@ -49,6 +53,20 @@ public class PortfolioService {
     portfolioDao.insertPortfolio(portfolio);
 
     return portfolio.getPortfolioId();
+  }
+
+  // 페이지별 분석 + 최종 요약을 백그라운드에서 순서대로 실행
+  // (페이지당 LLM 호출 + rate limit 회피용 sleep이 있어 시간이 오래 걸리므로,
+  // 요청 스레드를 막지 않도록 별도 스레드풀에서 처리한다)
+  @Async("portfolioAnalysisExecutor")
+  public void runAnalysisAsync(Integer portfolioId) {
+    try {
+      analyzePortfolio(portfolioId);
+      generateSummary(portfolioId);
+      log.info("포트폴리오 비동기 분석 완료 - portfolioId: {}", portfolioId);
+    } catch (Exception e) {
+      log.error("포트폴리오 비동기 분석 실패 - portfolioId: {}", portfolioId, e);
+    }
   }
 
   // 페이지별로 분석하는 에이전트 호출

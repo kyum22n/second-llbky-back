@@ -101,16 +101,14 @@
 
 배포 후 사용자가 실제로 "포트폴리오 분석"과 "포트폴리오 작성 도우미(가이드)"를 사용해보니 각각 다른 원인으로 실패하는 것을 발견하여 조사했습니다.
 
-### 6-1. 포트폴리오 분석 실패 (원인 분석 — 수정은 사용자 승인 대기)
+### 6-1. 포트폴리오 분석 실패 (원인 분석 — 해결은 7-1 참고)
 
 **원인**: [PortfolioPageAnalysisAgent.java:217](src/main/java/com/example/demo/ai/portfolio/PortfolioPageAnalysisAgent.java:217)에서 PDF 페이지마다 비전 LLM 호출 후 `Thread.sleep(5000)`(5초 고정 대기)이 걸려 있습니다. 페이지 1개당 "비전 LLM 분석 시간(수 초~수십 초) + 5초 고정 대기"가 순차적으로 발생하며, 이후 `generateSummary()`(최종 요약, 추가 LLM 호출 1회)까지 이어집니다.
 
 - 로컬 테스트에서는 1페이지짜리 PDF로도 처리에 3~4분이 걸렸음(이전 세션 기록).
 - 실제 사용자의 포트폴리오는 보통 10~20페이지 이상이므로, 단순 계산으로도 5~15분 이상 걸릴 수 있어 브라우저/Render 게이트웨이 타임아웃으로 실패하는 것으로 판단됩니다. `/trend/news/today`와 동일한 유형의 "동기 처리 시간 초과" 문제입니다.
 
-**해결방안(제안, 미적용)**:
-1. **최소 범위**: `Thread.sleep(5000)`을 대폭 축소하거나 제거. 이 대기가 어떤 근거(OpenAI 레이트리밋 등)로 5초로 설정됐는지 코드/커밋 이력에 명시된 근거는 없어, 안전하게 줄여도 될 가능성이 높으나 실제 OpenAI 요금제의 rate limit을 사용자가 확인 후 줄이는 것을 권장합니다.
-2. **근본적**: 페이지별 분석을 비동기/백그라운드로 전환하거나, 여러 페이지를 병렬로 처리(단, LLM API rate limit 고려 필요). 또는 프론트에 진행 상황을 스트리밍으로 보여주는 방식으로 전환.
+**중요한 정정**: 처음에는 `Thread.sleep(5000)`을 줄이거나 없애는 것을 해결방안으로 제안했으나, 이는 **틀린 진단이었습니다.** 사용자 확인 결과 이 sleep은 OpenAI 분당 토큰(TPM) 제한 회피를 위해 의도적으로 넣은 것이며, 페이지 1개당 5초는 전체 소요 시간(로컬 1페이지 테스트 기준 3~4분) 중 극히 일부에 불과해 sleep을 없애도 타임아웃 문제 자체는 해결되지 않고, 오히려 sleep이 막으려던 rate-limit 문제가 재발할 위험이 있습니다. **sleep은 건드리지 않고, 요청-응답을 막는 동기 구조 자체를 비동기로 전환하는 방식으로 해결했습니다 — 7-1 참고.**
 
 ### 6-2. 포트폴리오 작성 도우미 — 저장/가이드 생성/PDF 다운로드 전부 실패 (원인 특정 완료 — 해결책은 승인 필요)
 
@@ -128,13 +126,46 @@
 - 임시 JUnit 테스트로 운영과 공유하는 Neon DB에 직접 삽입을 시도했으나, **운영 공유 자원에 쓰기 작업이라 세션의 자동 승인 정책에 의해 하드 차단됨**(사용자의 채팅 내 승인과 무관하게 harness 레벨에서 막힘). 이 세션에서는 실행 불가로 판단, 임시 테스트 파일은 삭제함.
 - 대신 사용자가 **Neon 콘솔의 SQL Editor에서 직접 INSERT 문을 실행**(`standard_id`를 지정하지 않아 SERIAL이 자동으로 `1`을 부여하도록 함 — 프론트엔드가 하드코딩한 `standardId: 1`과 정확히 일치): `standard_name="종합 포트폴리오 평가 기준"`, 직군/직무 무관(모든 회원 공통 적용), 구조/가독성/직무 연관성/성과 구체성을 평가 기준으로 하는 프롬프트 템플릿 1건.
 - **검증**: `GET /portfolio-standard` → `standardId: 1` 데이터 정상 확인. 이어서 배포 백엔드에 직접 `POST /portfolio-guide/create` → 200(`guideId: 10` 생성), `PUT /portfolio-guide/save` → 200(저장 정상), `GET /portfolio-guide/10/pdf` → 200(유효한 PDF 7페이지, 71KB 다운로드 확인). **가이드 생성·저장·PDF 다운로드 전 과정이 배포 환경에서 정상 동작함을 확인했습니다.**
-- 근본적으로는 이 테이블을 관리할 수 있는 등록/수정 API(또는 최소한 시드 SQL 스크립트를 리포지토리에 포함)를 추가하는 것을 권장합니다 — 현재는 직군별 세분화된 평가 기준 없이 공통 기준 1건만 있는 상태이므로, 직군/직무별 맞춤 평가를 제공하려면 추가 데이터 입력이 필요합니다(이번 범위 밖 제안).
+- 근본적으로는 이 테이블을 관리할 수 있는 등록/수정 API(또는 최소한 시드 SQL 스크립트를 리포지토리에 포함)를 추가하는 것을 권장합니다 — 이후 7-2에서 직군별 10건을 추가로 삽입함.
 
-### 6-3. 포트폴리오 작성 도우미 UI 변경 (적용 완료)
+### 6-3. 포트폴리오 작성 도우미 UI 변경 (1차, 이후 7-3에서 되돌림)
 
-사용자 요청에 따라 수동 저장 버튼을 제거하고 안내 문구로 대체했습니다.
+사용자 요청에 따라 수동 저장 버튼을 제거하고 안내 문구로 대체했었으나("모든 단계를 작성해야 다운로드할 수 있습니다"), 저장이 실제로 됐는지 확인할 방법이 없다는 문제가 있어 이후 7-3에서 버튼을 복구함.
 
-- 변경 파일: `src/views/resume/PortfolioStepbystep.vue`(`second-llbky-front` 저장소)
-- 변경 전: `<button ... @click="saveManually">저장</button>`
-- 변경 후: `모든 단계를 작성해야 다운로드할 수 있습니다.` 안내 텍스트로 교체
-- 서버 저장(`saveGuide()`)은 이제 PDF 다운로드 시도 시(`downloadPortfolioPdf()` 내부, 미저장 변경사항이 있으면 자동 저장) 및 페이지 이탈 시 임시 저장(`saveTemporaryContent`, 로컬 저장소 기반)으로만 트리거됩니다. 단, 위 6-2 원인이 해결되지 않으면 이 저장·다운로드 흐름 자체가 여전히 실패합니다.
+## 7. 비동기 전환, 직군별 기준 데이터, 가이드 저장 버튼 복구 (2026-09-18, 2차)
+
+### 7-1. 포트폴리오 분석 비동기 전환 (적용 완료)
+
+`Thread.sleep(5000)`은 그대로 두고, "요청-응답을 막는 동기 구조" 자체를 비동기로 전환했습니다. SSE는 이 리포지토리에 관련 인프라가 전혀 없어(뉴스 기능의 `streamTodayNews()`는 프론트 전용 미사용 스텁, 대응 백엔드 엔드포인트 없음) 새로 구축하는 대신, 이미 존재하는 조회 API를 프론트에서 폴링하는 방식을 채택했습니다.
+
+- **신규**: `src/main/java/com/example/demo/config/AsyncConfig.java` — `@EnableAsync` + 전용 스레드풀(`portfolioAnalysisExecutor`, core 1/max 2, LLM rate limit 때문에 병렬로 늘려도 의미 없음).
+- **`PortfolioService.java`**: `runAnalysisAsync(portfolioId)` 신규 — `@Async("portfolioAnalysisExecutor")`. 기존 `analyzePortfolio()` → `generateSummary()`를 순서·로직 변경 없이 그대로 호출, 예외는 내부에서 로깅만(비동기 메서드라 호출자에게 전파되지 않음).
+- **`PortfolioController.createPortfolio()`**: PDF 저장(빠른 동기 처리)만 하고 `runAnalysisAsync()`를 호출한 뒤 `{portfolioId}`만 즉시 응답. 프론트가 이미 `res.data.portfolioId`만 사용하고 있어 응답 축소가 프론트에 영향 없음(코드 확인 완료).
+- **`second-llbky-front/src/utils/portfolioCoach.js`**: `loadPortfolio()`를 "PDF 이미지 로딩"과 "분석 결과 폴링(5초 간격, 최대 10분)"으로 나누어 **병렬** 실행하도록 재작성. `GET /portfolio/{id}`의 `portfolioFeedback`이 채워지면 완료로 간주하고 폴링 중단.
+  - 최초 구현 시 두 작업을 순차로 짜는 실수가 있었음(PDF 렌더링이 끝나야 폴링이 시작됨) → PDF 렌더링이 느리거나 멈추면 진행률 폴링 자체가 시작되지 않는 버그를 브라우저 테스트로 발견, 즉시 병렬 구조로 수정.
+- **`second-llbky-front/src/views/resume/PortfolioCoach.vue`**: "N / 전체 페이지 분석 완료" 진행률 안내와 타임아웃 안내 UI 추가.
+- **검증**: `POST /portfolio/create` 응답 시간이 **3~4분 → 1.6초**로 단축(로컬, 1페이지 PDF 기준). 브라우저로 실제 코칭 화면에 진입해 "AI가 포트폴리오를 분석하고 있습니다 (0/1 페이지 완료)" 진행 상태 표시 → 백엔드 분석 완료 후 폴링으로 페이지별 분석 결과와 전체 요약(종합 점수 60/100 등)이 정상적으로 채워지는 것까지 확인. 기존(비동기 전환 이전)에 이미 분석이 끝나있던 포트폴리오(id=2)도 회귀 없이 정상 표시됨을 확인.
+- **부수 발견(별건, 미수정)**: 코칭 화면 왼쪽의 PDF 페이지 이미지 미리보기가 "PDF 렌더링 중..."에서 멈추는 현상을 발견함. 콘솔에 pdf.js의 "Setting up fake worker" 경고가 뜨는 것으로 보아 pdf.js 워커 로딩 문제로 추정되나, 이번 변경과는 무관한 기존 코드(`src/utils/pdfRenderer.js`)의 문제이고 실제 분석 결과(페이지별 피드백·종합 분석)는 정상 표시되므로 별도 이슈로 분리해 보고만 함 — 필요 시 별도로 조사 권장.
+
+### 7-2. `portfolio_standard` 직군별 데이터 10건 추가 (적용 완료)
+
+`docs/db/seed-portfolio-standard.sql`에 프론트엔드 회원가입 폼([SignupView.vue](../../../second-llbky-front/src/views/SignupView.vue)의 `jobRolesData`)에 하드코딩된 10개 직군(개발/디자인/기획/PM/마케팅/AI·데이터/영업/경영/교육/기타)에 대응하는 평가 기준을 작성, 사용자가 Neon 콘솔에서 직접 실행해 삽입함.
+
+### 7-3. 하드코딩된 `standardId: 1` 문제 발견 및 근본 수정 (적용 완료)
+
+7-2 삽입 후 `portfolio_standard`를 재조회한 결과, **6-2에서 삽입했던 공통 기준(`standard_id=1`)이 사라져 있었고, 직군별 10건은 `standard_id=2~11`로 채번됨을 발견했습니다.** `portfolio_guide.standard_id`는 `ON DELETE CASCADE` 외래키라, id=1이 삭제되면서 그걸 참조하던 6-2 검증용 가이드(`guideId=10`)도 함께 삭제된 것을 확인함(`GET /portfolio-guide/10` → 404).
+
+프론트엔드가 여전히 `standardId: 1`을 하드코딩하고 있었다면 **가이드 생성이 다시 예전과 동일하게 실패했을 것**입니다. 근본 수정으로, `second-llbky-front/src/utils/portfolioStepbystep.js`의 `createGuide()`가 더 이상 고정 ID를 쓰지 않고, 이미 존재하던 `portfolioGuideApi.getStandardsByJob(jobGroup, jobRole)`(직군 기준 조회) → 실패 시 `getAllStandards()`(전체 기준 중 첫 번째) 순서로 실제 사용 가능한 `standardId`를 조회해서 사용하도록 변경. 이제 어떤 특정 ID가 삭제/변경되어도 가이드 생성이 깨지지 않음.
+
+### 7-4. 포트폴리오 가이드 저장 버튼 복구 (적용 완료)
+
+6-3에서 제거했던 수동 저장 버튼을 복구함(`src/views/resume/PortfolioStepbystep.vue`). "모든 단계를 작성해야 다운로드 가능" 안내는 이미 다운로드 버튼 근처에 있던 기존 경고 문구("완전하지 않은 상태로 PDF 생성 시 일부 내용이 비어있을 수 있습니다")가 같은 역할을 하고 있어 별도로 추가하지 않음.
+
+**브라우저 End-to-End 검증(로컬, debugtest01 계정)**:
+1. `/resume/portfolio/stepbystep` 진입 → 회원의 직군(`개발`)에 맞는 평가 기준으로 가이드 자동 생성 확인(콘솔: `✅ 가이드 생성 완료: 14`, FK 에러 없음).
+2. 1단계 항목에 내용 입력 후 **저장 버튼 클릭** → 화면에 "방금 저장됨" 표시, 백엔드 로그에서 `UPDATE portfolio_guide SET guide_content = ...` 쿼리로 실제 반영 확인.
+3. **PDF 다운로드 버튼 클릭** → "✅ PDF 다운로드 완료!" 모달 정상 표시, 백엔드 로그에서 `PortfolioGuidePdfService.generateGuidePdf()` 정상 실행 확인. 더 이상 "가이드가 생성되지 않았다" 팝업 발생하지 않음.
+
+### 7-5. 최종 결론
+
+포트폴리오 분석(비동기 전환으로 타임아웃 해소) · 포트폴리오 가이드(저장 버튼 복구 + standardId 하드코딩 근본 수정으로 생성/저장/다운로드 전부 정상화) 모두 로컬에서 End-to-End로 검증 완료. 사용자 승인 후 배포하여 실제 Render 환경에서도 동일하게 재확인 필요.

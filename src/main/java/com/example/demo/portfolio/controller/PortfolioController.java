@@ -1,6 +1,7 @@
 package com.example.demo.portfolio.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.portfolio.dto.request.PortfolioCreateRequest;
-import com.example.demo.portfolio.dto.response.PortfolioCreateResponse;
-import com.example.demo.portfolio.dto.response.PortfolioListResponse;
-import com.example.demo.portfolio.dto.response.PortfolioPageFeedbackResponse;
-import com.example.demo.portfolio.dto.response.PortfolioSummaryResponse;
 import com.example.demo.portfolio.entity.Portfolio;
 import com.example.demo.portfolio.entity.PortfolioImage;
 import com.example.demo.portfolio.service.PortfolioService;
@@ -44,16 +41,13 @@ public class PortfolioController {
     try {
       Integer portfolioId = portfolioService.createPortfolio(request);
 
-      List<PortfolioPageFeedbackResponse> pages = portfolioService.analyzePortfolio(portfolioId);
-      PortfolioSummaryResponse summary = portfolioService.generateSummary(portfolioId);
+      // 페이지별 분석 + 최종 요약은 시간이 오래 걸려(페이지당 LLM 호출 + rate limit
+      // 회피용 대기) 백그라운드로 넘기고, 업로드 자체는 즉시 응답한다.
+      // 진행 상황/완료 여부는 프론트에서 GET /portfolio/{id}, /portfolio/detail/{id}를
+      // 폴링해서 확인한다.
+      portfolioService.runAnalysisAsync(portfolioId);
 
-      // 하나의 DTO로 리턴
-      PortfolioCreateResponse response = new PortfolioCreateResponse();
-      response.setPortfolioId(portfolioId);
-      response.setPages(pages);
-      response.setSummary(summary);
-
-      return ResponseEntity.ok(response);
+      return ResponseEntity.ok(Map.of("portfolioId", portfolioId));
     } catch (Exception e) {
       return ResponseEntity.status(500).body(e.toString());
     }
