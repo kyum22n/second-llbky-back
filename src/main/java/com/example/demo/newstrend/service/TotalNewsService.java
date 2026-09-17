@@ -405,10 +405,14 @@ public class TotalNewsService {
     // 오늘 뉴스 존재 여부 확인
     boolean alreadyCollectedToday = newsSummaryService.existsTodayNews(memberId);
 
+    // 자동 수집 건수 상한: 기사 1건당 관련성 판단/요약/키워드 추출 등 여러 번의 LLM 호출이
+    // 순차적으로 발생해 시간이 오래 걸리므로, 요청-응답 흐름을 막지 않도록 소량으로 제한한다.
+    int autoCollectLimit = Math.min(limit, 5);
+
     // 오늘 뉴스 없으면 자동 수집
     if (!alreadyCollectedToday) {
         log.info("오늘 뉴스 없음 → 자동 수집");
-        collectAndAnalyzeNews(jobGroupKeywords, memberId, limit);
+        collectAndAnalyzeNews(jobGroupKeywords, memberId, autoCollectLimit);
     } else {
         log.info("오늘 뉴스 이미 수집됨");
     }
@@ -422,8 +426,8 @@ public class TotalNewsService {
     if (weeklyNews == null || weeklyNews.size() < 20) { // ✅ 최소 20개 확보
       log.info("데이터 부족({} 건) - 대량 수집 시작", weeklyNews != null ? weeklyNews.size() : 0);
 
-      // 대량 수집 (100개 요청)
-      int analyzed = collectAndAnalyzeNews(jobGroupKeywords, memberId, 50); // ✅ 100개
+      // 대량 수집 (동일한 이유로 소량 제한)
+      int analyzed = collectAndAnalyzeNews(jobGroupKeywords, memberId, autoCollectLimit);
       log.info("대량 수집 완료 - {}건 분석됨", analyzed);
 
       // 수집 후 다시 조회
