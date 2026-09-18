@@ -78,9 +78,9 @@ DB 연결이 끝난 second-llbky-back(Spring Boot 3.4 / Java 21 / Gradle) 프로
 - src/main/java/com/example/demo/config/SSLHelper.java 가 SSL 인증서 검증을 완전히 우회하는 코드인데, 실제로 어디서 호출되는지 찾아서 운영 배포 시에도 필요한지, 보안 위험은 없는지 검토해줘.
 - Render 무료 web service는 15분 정도 요청이 없으면 슬립 상태가 되고, 다음 요청 때 콜드 스타트로 수십 초가 걸릴 수 있어. 포트폴리오 데모 시 첫 요청이 느릴 수 있다는 점을 감안해줘 (필요하면 무료 범위 내 대응 방법도 제안해줘, 유료 전환은 하지 말고).
 - 프론트엔드는 Vue.js(빌드 도구: [Vite / Vue CLI])이고 Vercel에 배포할 거야. vue-router를 history 모드로 쓰고 있다면 새로고침 404 방지를 위한 vercel.json rewrite 설정도 같이 확인해줘.
-- 프론트엔드 프로젝트 경로/저장소: [경로 또는 URL]
+- 프론트엔드 프로젝트 경로/저장소: "C:\kyum\project\second-llbky-front"
 - 도메인: [없음, 플랫폼 기본 서브도메인 사용 / 보유 도메인: ___]
-- 이 백엔드 저장소와 프론트엔드 저장소는 GitHub에 [push되어 있음 (URL: ___) / 아직 안 되어 있음]
+- 이 백엔드 저장소와 프론트엔드 저장소는 GitHub에 [push되어 있음 (백엔드 저장소 URL: https://github.com/kyum22n/second-llbky-back.git/ 프론트엔드 저장소 URL: https://github.com/kyum22n/second-llbky-front.git)
 
 해줬으면 하는 것:
 1. 백엔드를 Render에 배포하기 위한 Dockerfile을 작성해줘 (Java 21 기반, gradle 빌드 → jar 실행하는 멀티스테이지 빌드로). 기존 소스 코드 자체는 건드리지 말고 Dockerfile/설정 파일만 추가해줘.
@@ -95,9 +95,11 @@ DB 연결이 끝난 second-llbky-back(Spring Boot 3.4 / Java 21 / Gradle) 프로
 10. 배포가 끝나면 프론트엔드 → 백엔드 → DB로 이어지는 실제 API 호출(예: 로그인 또는 조회 API)을 같이 검증해줘.
 
 주의:
-- 기존 소스 코드/설정은 Dockerfile, docker-compose.yml, vercel.json, 배포 설정 파일 등 새로 추가하는 파일 외에는 바꾸지 마. (CORS, SSLHelper, 헬스체크 엔드포인트 추가처럼 검토가 필요한 부분은 결과만 보고하고 실제 수정은 나와 상의 후에 해줘.)
+- 기존 소스 코드/설정은 Dockerfile, docker-compose.yml, vercel.json, 배포 설정 파일 등 새로 추가하는 파일 외에는 바꾸지 마. (CORS, SSLHelper, 헬스체크 엔드포인트 추가처럼 검토가 필요한 부분은 실행 전후로 나에게 보고하고 실제 수정은 나와 상의 후에 해줘.)
 - 실제 배포 실행(플랫폼 가입, GitHub 연동 승인, 결제 정보 입력 등)은 반드시 나한테 확인받고, 콘솔 조작이 필요한 단계는 내가 직접 하도록 안내만 해줘.
 - 유료 플랜/애드온으로 전환되는 옵션은 제안하지 말고, 무료 티어 범위 안에서만 방법을 찾아줘. 애매하면 과금 가능성을 먼저 알려주고 나한테 판단을 맡겨줘.
+- env.* 파일은 절대 읽지 말고, 각 시크릿 값이나 환경변수 등을 등록은 내가 직접 등록할 테니까 가이드만 제공해.
+- 비밀번호와 같은 자격 정보를 설정할 때는 반드시 내가 직접 입력하게 하고, 절대 너 자신에게 노출시키지 않도록 해.
 - 시크릿 값은 절대 커밋하지 말고, 각 플랫폼의 환경변수/시크릿 매니저에만 등록해.
 ```
 
